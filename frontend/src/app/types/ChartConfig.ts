@@ -186,7 +186,7 @@ export const ChartStyleSectionComponentType = {
   TABLEHEADER: 'tableHeader',
   LINE: 'line',
   MARGIN_WIDTH: 'marginWidth',
-  CODE: 'code',
+  TEXT: 'text',
 };
 
 type ChartConfigBase = {

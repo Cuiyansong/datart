@@ -157,7 +157,7 @@ const ItemLayout: FC<FormGeneratorLayoutProps<ChartStyleSectionConfig>> = memo(
           return <UnControlledTableHeaderPanel {...props} />;
         case ChartStyleSectionComponentType.GROUP:
           return <GroupLayout {...props} />;
-        case ChartStyleSectionComponentType.CODE:
+        case ChartStyleSectionComponentType.TEXT:
           return <BasicText {...props} />;
         default:
           return <div>{`no matched component comType of ${data.comType}`}</div>;

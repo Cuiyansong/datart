@@ -33,9 +33,10 @@ const BasicText: FC<ItemLayoutProps<ChartStyleSectionConfig>> = memo(
       onChange?.(ancestors, newRow);
     };
 
+    console.log(`rest ---> `, options);
+
     return (
       <TextArea
-        rows={4}
         autoSize={true}
         showCount={true}
         onChange={handleTextChange}

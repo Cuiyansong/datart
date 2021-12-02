@@ -29,12 +29,8 @@ function DemoMermaidUMLChart({ dHelper }) {
             {
               label: 'code.area',
               key: 'area',
-              comType: 'code',
-              options: {
-                style: {
-                  height: '600px',
-                },
-              },
+              comType: 'text',
+              options: {},
             },
           ],
         },
@@ -46,12 +42,8 @@ function DemoMermaidUMLChart({ dHelper }) {
             {
               label: 'watermark.area',
               key: 'area',
-              comType: 'code',
-              options: {
-                style: {
-                  height: '50px',
-                },
-              },
+              comType: 'text',
+              options: {},
             },
           ],
         },
