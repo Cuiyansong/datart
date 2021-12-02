@@ -18,12 +18,12 @@
 
 import { ExclamationCircleOutlined } from '@ant-design/icons';
 import { Modal } from 'antd';
-import { ChartMouseEventParams } from 'app/pages/ChartWorkbenchPage/models/Chart';
 import { PageInfo } from 'app/pages/MainPage/pages/ViewPage/slice/types';
 import { urlSearchTransfer } from 'app/pages/MainPage/pages/VizPage/utils';
-import { selectOrgId } from 'app/pages/MainPage/slice/selectors';
+import { ChartMouseEventParams } from 'app/types/DatartChartBase';
+import { ControllerFacadeTypes } from 'app/types/FilterControlPanel';
 import React, { FC, useCallback, useContext } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { useDispatch } from 'react-redux';
 import { useHistory } from 'react-router';
 import { BoardContext } from '../contexts/BoardContext';
 import { WidgetContext } from '../contexts/WidgetContext';
@@ -31,6 +31,18 @@ import {
   WidgetMethodContext,
   WidgetMethodContextProps,
 } from '../contexts/WidgetMethodContext';
+import { boardActions } from '../pages/Board/slice';
+import {
+  getChartWidgetDataAsync,
+  getWidgetDataAsync,
+} from '../pages/Board/slice/thunk';
+import {
+  BoardLinkFilter,
+  JumpConfig,
+  Widget,
+  WidgetContentChartType,
+  WidgetType,
+} from '../pages/Board/slice/types';
 import {
   editBoardStackActions,
   editDashBoardInfoActions,
@@ -41,15 +53,6 @@ import {
   getEditChartWidgetDataAsync,
   getEditWidgetDataAsync,
 } from '../pages/BoardEditor/slice/thunk';
-import { boardActions } from '../slice';
-import { getChartWidgetDataAsync, getWidgetDataAsync } from '../slice/thunk';
-import {
-  BoardLinkFilter,
-  JumpConfig,
-  Widget,
-  WidgetContentChartType,
-  WidgetType,
-} from '../slice/types';
 import { widgetActionType } from './WidgetToolBar/config';
 
 const { confirm } = Modal;
@@ -57,11 +60,10 @@ export const WidgetMethodProvider: FC<{ widgetId: string }> = ({
   widgetId,
   children,
 }) => {
-  const { boardId, editing, renderMode } = useContext(BoardContext);
+  const { boardId, editing, renderMode, orgId } = useContext(BoardContext);
   const widget = useContext(WidgetContext);
   const dispatch = useDispatch();
   const history = useHistory();
-  const orgId = useSelector(selectOrgId);
 
   // deleteWidget
   const onWidgetDelete = useCallback(
@@ -84,7 +86,8 @@ export const WidgetMethodProvider: FC<{ widgetId: string }> = ({
     [dispatch],
   );
   const onWidgetEdit = useCallback(
-    (type: WidgetType, wid: string) => {
+    (widget: Widget, wid: string) => {
+      const type = widget.config.type;
       switch (type) {
         case 'chart':
           const chartType = widget.config.content.type;
@@ -98,11 +101,13 @@ export const WidgetMethodProvider: FC<{ widgetId: string }> = ({
             }),
           );
           break;
-        case 'filter':
+        case 'controller':
           dispatch(
-            editDashBoardInfoActions.changeFilterPanel({
+            editDashBoardInfoActions.changeControllerPanel({
               type: 'edit',
               widgetId: wid,
+              controllerType: widget.config.content
+                .type as ControllerFacadeTypes,
             }),
           );
           break;
@@ -126,13 +131,7 @@ export const WidgetMethodProvider: FC<{ widgetId: string }> = ({
       }
     },
 
-    [
-      dispatch,
-      orgId,
-      widget.config.content.type,
-      widget.config.name,
-      widget.datachartId,
-    ],
+    [dispatch, orgId],
   );
   const onWidgetFullScreen = useCallback(
     (editing: boolean, recordId: string, itemId: string) => {
@@ -331,7 +330,7 @@ export const WidgetMethodProvider: FC<{ widgetId: string }> = ({
     [boardId, dispatch, editing, renderMode, widgetId],
   );
   const onWidgetAction = useCallback(
-    (action: widgetActionType, widgetType: WidgetType) => {
+    (action: widgetActionType, widget: Widget) => {
       switch (action) {
         case 'fullScreen':
           onWidgetFullScreen(editing, boardId, widgetId);
@@ -342,10 +341,10 @@ export const WidgetMethodProvider: FC<{ widgetId: string }> = ({
           onWidgetGetData(boardId, widgetId);
           break;
         case 'delete':
-          onWidgetDelete(widgetType, widgetId);
+          onWidgetDelete(widget.config.type, widgetId);
           break;
         case 'edit':
-          onWidgetEdit(widgetType, widgetId);
+          onWidgetEdit(widget, widgetId);
           break;
         case 'makeLinkage':
           onMakeLinkage(widgetId);

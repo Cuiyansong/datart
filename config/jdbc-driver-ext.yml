@@ -9,8 +9,9 @@
 IMPALA:
   db-type: "impala"
   name: "impala"
-  driver-class: "com.mysql.cj.jdbc.Driver"
+  driver-class: "com.cloudera.impala.jdbc41.Driver"
   literal-quote: "'"
   identifier-quote: "`"
   adapter-class: "datart.data.provider.jdbc.adapters.ImpalaDataProviderAdapter"
   url-prefix: "jdbc:impala://"
+  sql-dialect: "datart.data.provider.calcite.dialect.ImpalaSqlDialectSupport"

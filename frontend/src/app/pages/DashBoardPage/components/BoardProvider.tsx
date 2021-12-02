@@ -20,9 +20,9 @@ import produce from 'immer';
 import React, { FC, memo, useCallback, useMemo } from 'react';
 import { useDispatch } from 'react-redux';
 import { BoardContext, BoardContextProps } from '../contexts/BoardContext';
+import { renderedWidgetAsync } from '../pages/Board/slice/thunk';
+import { Dashboard, VizRenderMode } from '../pages/Board/slice/types';
 import { renderedEditWidgetAsync } from '../pages/BoardEditor/slice/thunk';
-import { renderedWidgetAsync } from '../slice/thunk';
-import { Dashboard, VizRenderMode } from '../slice/types';
 import { adaptBoardImageUrl } from '../utils';
 import { BoardActionProvider } from './BoardActionProvider';
 import { BoardConfigProvider } from './BoardConfigProvider';
@@ -30,7 +30,7 @@ import { BoardInfoProvider } from './BoardInfoProvider';
 
 export const BoardProvider: FC<{
   board: Dashboard;
-  renderMode?: VizRenderMode;
+  renderMode: VizRenderMode;
   editing: boolean;
   autoFit?: boolean;
   allowDownload?: boolean;
@@ -41,7 +41,7 @@ export const BoardProvider: FC<{
     board,
     editing,
     children,
-    renderMode = 'read',
+    renderMode,
     autoFit,
     allowDownload,
     allowShare,
@@ -53,7 +53,9 @@ export const BoardProvider: FC<{
       name: board.name,
       boardId: board.id,
       status: board.status,
+      queryVariables: board.queryVariables,
       renderMode,
+      orgId: board.orgId,
       boardType: board.config.type,
       editing: editing,
       autoFit: autoFit,
@@ -64,6 +66,13 @@ export const BoardProvider: FC<{
       //
       renderedWidgetById: useCallback(
         wid => {
+          let initialQuery= board.config.initialQuery;
+
+          if (initialQuery=== false && renderMode !== 'schedule') {
+            //zh:如果 initialQuery=== false renderMode !=='schedule' 则不请求数据 en: If initialQuery=== false renderMode !=='schedule' then no data is requested
+            return false;
+          }
+
           if (editing) {
             dispatch(
               renderedEditWidgetAsync({ boardId: board.id, widgetId: wid }),

@@ -16,34 +16,50 @@
  * limitations under the License.
  */
 import { Modal } from 'antd';
-import ChartDataView, {
-  ChartDataViewFieldType,
-} from 'app/pages/ChartWorkbenchPage/models/ChartDataView';
-import { boardActions } from 'app/pages/DashBoardPage/slice';
+import { ChartEditorBaseProps } from 'app/components/ChartEditor';
+import { boardActions } from 'app/pages/DashBoardPage/pages/Board/slice';
 import {
   ContainerWidgetContent,
+  ControllerWidgetContent,
+  Dashboard,
   DataChart,
-  FilterWidgetContent,
   RelatedView,
   Relation,
   Widget,
-  WidgetFilterTypes,
-} from 'app/pages/DashBoardPage/slice/types';
+} from 'app/pages/DashBoardPage/pages/Board/slice/types';
+import { editWidgetInfoActions } from 'app/pages/DashBoardPage/pages/BoardEditor/slice';
 import {
   createInitWidgetConfig,
   createWidget,
 } from 'app/pages/DashBoardPage/utils/widget';
+import ChartDataView, { ChartDataViewFieldType } from 'app/types/ChartDataView';
+import { ControllerFacadeTypes } from 'app/types/FilterControlPanel';
 import produce from 'immer';
 import { RootState } from 'types';
 import { v4 as uuidv4 } from 'uuid';
 import { editBoardStackActions, editDashBoardInfoActions } from '.';
-import { ChartEditorBaseProps } from '../components/ChartEditor';
-import { BoardType } from './../../../slice/types';
-import { WidgetFilterFormType } from './../components/FilterWidgetPanel/types';
+import { BoardType } from '../../Board/slice/types';
+import { ControllerConfig } from '../components/ControllerWidgetPanel/types';
 import { addWidgetsToEditBoard, getEditWidgetDataAsync } from './thunk';
 import { HistoryEditBoard } from './types';
+
 const { confirm } = Modal;
-export const deleteWidgetsAction = () => async (dispatch, getState) => {
+export const clearEditBoardState =
+  (boardId: string) => async (dispatch, getState) => {
+    const editBoard = getState().editBoard as HistoryEditBoard;
+    if (editBoard.boardInfo.id !== boardId) {
+      return;
+    }
+    await dispatch(
+      editBoardStackActions.setBoardToEditStack({
+        dashBoard: {} as Dashboard,
+        widgetRecord: {},
+      }),
+    );
+    await dispatch(editDashBoardInfoActions.clearEditBoardInfo());
+    await dispatch(editWidgetInfoActions.clearWidgetInfo());
+  };
+export const deleteWidgetsAction = () => (dispatch, getState) => {
   const editBoard = getState().editBoard as HistoryEditBoard;
   let selectedIds = Object.values(editBoard.widgetInfoRecord)
     .filter(WidgetInfo => WidgetInfo.selected)
@@ -107,38 +123,40 @@ export const widgetToPositionAction =
     dispatch(editBoardStackActions.changeTwoWidgetIndex({ curId, targetId }));
   };
 
-export const updateWidgetFilterAction =
+export const updateWidgetControllerAction =
   (params: {
     boardId: string;
     boardType: BoardType;
     relations: Relation[];
-    filterName?: string;
+    name?: string;
     fieldValueType: ChartDataViewFieldType;
-    filterPositionType: WidgetFilterTypes;
+    controllerFacadeType: ControllerFacadeTypes;
     views: RelatedView[];
-    widgetFilter: WidgetFilterFormType;
+    config: ControllerConfig;
+    hasVariable?: boolean;
   }) =>
   async (dispatch, getState) => {
     const {
       boardId,
       boardType,
       views,
-      widgetFilter,
-      filterPositionType,
+      config,
+      controllerFacadeType,
       relations,
       fieldValueType,
-      filterName,
+      name,
+      hasVariable,
     } = params;
-    const content: FilterWidgetContent = {
-      type: filterPositionType || WidgetFilterTypes.Free,
+    const content: ControllerWidgetContent = {
+      type: controllerFacadeType,
       relatedViews: views,
-      fieldValueType,
-      widgetFilter: widgetFilter,
+      name: name || 'newController',
+      config: config,
     };
 
     const widgetConf = createInitWidgetConfig({
-      name: filterName || 'newFilter',
-      type: 'filter',
+      name: name || 'newController',
+      type: 'controller',
       content: content,
       boardType: boardType,
     });
@@ -152,9 +170,10 @@ export const updateWidgetFilterAction =
     });
     dispatch(addWidgetsToEditBoard([widget]));
     dispatch(
-      editDashBoardInfoActions.changeFilterPanel({
+      editDashBoardInfoActions.changeControllerPanel({
         type: 'hide',
         widgetId: '',
+        controllerType: undefined,
       }),
     );
   };
@@ -199,6 +218,13 @@ export const editWrapChartWidget =
   (props: { widgetId: string; dataChart: DataChart; view: ChartDataView }) =>
   async (dispatch, getState) => {
     const { dataChart, view, widgetId } = props;
+    const editBoard = getState().editBoard as HistoryEditBoard;
+    const widgetMap = editBoard.stack.present.widgetRecord;
+    const curWidget = widgetMap[widgetId];
+    const nextWidget = produce(curWidget, draft => {
+      draft.viewIds = [dataChart.viewId];
+    });
+    dispatch(editBoardStackActions.updateWidget(nextWidget));
     const dataCharts = [dataChart];
     const viewViews = [view];
     dispatch(boardActions.setDataChartMap(dataCharts));

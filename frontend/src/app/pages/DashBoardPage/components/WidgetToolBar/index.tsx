@@ -29,7 +29,7 @@ import { BoardContext } from '../../contexts/BoardContext';
 import { WidgetContext } from '../../contexts/WidgetContext';
 import { WidgetInfoContext } from '../../contexts/WidgetInfoContext';
 import { WidgetMethodContext } from '../../contexts/WidgetMethodContext';
-import { WidgetType } from '../../slice/types';
+import { WidgetType } from '../../pages/Board/slice/types';
 import { WidgetActionDropdown } from './WidgetActionDropdown';
 
 interface WidgetToolBarProps {
@@ -47,7 +47,7 @@ const WidgetToolBar: FC<WidgetToolBarProps> = memo(({ widgetType }) => {
   };
   const renderedIcon = () => {
     if (boardType === 'free') return null;
-    if (widget.config.type === 'filter') return null;
+    if (widget.config.type === 'controller') return null;
     return rendered ? null : (
       <Tooltip title="等待加载">
         <ClockCircleOutlined style={{ color: PRIMARY }} />

@@ -17,10 +17,8 @@
  */
 
 import Chart from 'app/pages/ChartWorkbenchPage/models/Chart';
-import ChartConfig, {
-  ChartDataSectionType,
-} from 'app/pages/ChartWorkbenchPage/models/ChartConfig';
-import ChartDataset from 'app/pages/ChartWorkbenchPage/models/ChartDataset';
+import { ChartConfig, ChartDataSectionType } from 'app/types/ChartConfig';
+import ChartDataset from 'app/types/ChartDataset';
 import {
   getColumnRenderName,
   getDataColumnMaxAndMin,
@@ -30,7 +28,7 @@ import {
   getStyleValueByGroup,
   getValueByColumnKey,
   transfromToObjectArray,
-} from 'app/utils/chart';
+} from 'app/utils/chartHelper';
 import { init } from 'echarts';
 import Config from './config';
 
@@ -76,7 +74,9 @@ class BasicScatterChart extends Chart {
     this.chart?.setOption(Object.assign({}, newOptions), true);
   }
 
-  onUnMount(): void {}
+  onUnMount(): void {
+    this.chart?.dispose();
+  }
 
   onResize(opt: any, context): void {
     this.chart?.resize(opt, context);
@@ -252,8 +252,9 @@ class BasicScatterChart extends Chart {
       };
     });
 
-    const sizeValueIndex = [].concat(aggregateConfigs).concat(infoConfigs)
-      ?.length;
+    const sizeValueIndex = []
+      .concat(aggregateConfigs)
+      .concat(infoConfigs)?.length;
 
     return {
       name: colorSeriesName || seriesName,

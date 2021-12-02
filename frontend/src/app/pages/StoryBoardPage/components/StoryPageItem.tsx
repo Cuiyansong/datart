@@ -15,41 +15,42 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import Dashboard from 'app/pages/DashBoardPage/pages/Dashboard';
+import Board from 'app/pages/DashBoardPage/pages/Board';
+import { VizRenderMode } from 'app/pages/DashBoardPage/pages/Board/slice/types';
 import React, { useMemo } from 'react';
 import styled from 'styled-components/macro';
 import { StoryPage } from '../slice/types';
-
 const StoryPageItem: React.FC<{
   page: StoryPage;
   autoFit?: boolean;
   showZoomCtrl?: boolean;
-}> = ({ page, autoFit, showZoomCtrl }) => {
+  renderMode: VizRenderMode;
+}> = ({ page, autoFit, showZoomCtrl, renderMode }) => {
   const { relId, relType } = page;
 
   const SlideContent = useMemo(() => {
     if (relType === 'DASHBOARD') {
       return (
-        <Dashboard
+        <Board
           key={relId}
           id={relId}
           fetchData={false}
           hideTitle={true}
           autoFit={autoFit}
           showZoomCtrl={showZoomCtrl}
+          renderMode={renderMode}
         />
       );
     } else {
       return null;
     }
-  }, [autoFit, relId, relType, showZoomCtrl]);
+  }, [autoFit, relId, relType, renderMode, showZoomCtrl]);
   const { in: effectIn, out: effectOut, speed } = page.config.transitionEffect;
   return (
     <SectionWrap
       className="story-page"
       data-transition={`${effectIn}${' '}${effectOut}`}
       data-transition-speed={speed}
-      // data-background-color={}
     >
       {SlideContent}
     </SectionWrap>
@@ -63,6 +64,4 @@ const SectionWrap = styled.section`
   width: 100% !important;
   height: 100% !important;
   padding: 0 !important;
-
- 
 `;

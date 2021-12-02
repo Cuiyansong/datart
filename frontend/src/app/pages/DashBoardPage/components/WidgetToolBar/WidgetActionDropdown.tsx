@@ -15,12 +15,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { EditFilled } from '@ant-design/icons';
+import { EllipsisOutlined } from '@ant-design/icons';
 import { Button, Dropdown, Menu } from 'antd';
 import React, { memo, useCallback, useContext, useMemo } from 'react';
 import { BoardContext } from '../../contexts/BoardContext';
 import { WidgetMethodContext } from '../../contexts/WidgetMethodContext';
-import { Widget } from '../../slice/types';
+import { Widget } from '../../pages/Board/slice/types';
 import { getWidgetActionList } from '../../utils/widget';
 import { widgetActionMap } from './config';
 
@@ -39,9 +39,9 @@ export const WidgetActionDropdown: React.FC<WidgetActionDropdownProps> = memo(
     );
     const menuClick = useCallback(
       ({ key }) => {
-        onWidgetAction(key, widget.config.type);
+        onWidgetAction(key, widget);
       },
-      [onWidgetAction, widget.config.type],
+      [onWidgetAction, widget],
     );
     const actionList = useMemo(() => {
       const actionMap = boardEditing
@@ -69,7 +69,7 @@ export const WidgetActionDropdown: React.FC<WidgetActionDropdownProps> = memo(
         trigger={['click']}
         arrow
       >
-        <Button icon={<EditFilled />} type="link" />
+        <Button icon={<EllipsisOutlined />} type="link" />
       </Dropdown>
     );
   },

@@ -3,7 +3,7 @@
     <formats>
         <format>zip</format>
     </formats>
-    <includeBaseDirectory>true</includeBaseDirectory>
+    <includeBaseDirectory>false</includeBaseDirectory>
     <baseDirectory>${project.build.finalName}</baseDirectory>
     <fileSets>
         <fileSet>
@@ -23,7 +23,7 @@
         <outputDirectory>./</outputDirectory>
         <includes>
             <include>Dockerfile</include>
-            <include>docker-compose.yml</include>
+            <include>docker-compose.yml.example</include>
         </includes>
     </fileSet>
     </fileSets>

@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { strEnumType, WidgetType } from '../../slice/types';
+import { strEnumType, WidgetType } from '../../pages/Board/slice/types';
 export {};
 export const widgetActionTypeMap = strEnumType([
   'refresh',
@@ -34,16 +34,14 @@ export const widgetViewActionMap: Record<WidgetType, widgetActionType[]> = {
   chart: ['refresh', 'fullScreen'],
   media: ['fullScreen'],
   container: ['info'],
-  filter: ['refresh'],
-  explorer: [],
+  controller: ['refresh'],
 };
 // 编辑 edit
 export const widgetEditActionMap: Record<WidgetType, widgetActionType[]> = {
   chart: ['refresh', 'edit', 'delete', 'makeLinkage', 'makeJump'],
   media: ['edit', 'delete'],
-  filter: ['refresh', 'edit', 'delete'],
+  controller: ['refresh', 'edit', 'delete'],
   container: ['edit', 'delete'],
-  explorer: [],
 };
 export const widgetActionMap = {
   view: widgetViewActionMap,

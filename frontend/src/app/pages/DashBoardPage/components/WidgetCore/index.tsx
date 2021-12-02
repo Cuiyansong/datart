@@ -27,14 +27,14 @@ import { WidgetInfoContext } from 'app/pages/DashBoardPage/contexts/WidgetInfoCo
 import {
   ContainerWidgetContent,
   MediaWidgetContent,
-} from 'app/pages/DashBoardPage/slice/types';
+} from 'app/pages/DashBoardPage/pages/Board/slice/types';
 import React, { memo, useContext, useEffect, useMemo } from 'react';
 import styled from 'styled-components/macro';
 import { BoardContext } from '../../contexts/BoardContext';
 import { BoardInfoContext } from '../../contexts/BoardInfoContext';
 import { WidgetMethodContext } from '../../contexts/WidgetMethodContext';
 import { getWidgetSomeStyle } from '../../utils/widget';
-import { WidgetFilterCore } from './FilterWIdget';
+import { ControllerWidgetCore } from './ControllerWIdget';
 
 export interface WidgetCoreProps {
   background?: boolean;
@@ -73,7 +73,7 @@ export const WidgetCore: React.FC<WidgetCoreProps> = memo(props => {
       widget.config.autoUpdate
     ) {
       timer = setInterval(() => {
-        onWidgetAction('refresh', widget.config.type);
+        onWidgetAction('refresh', widget);
       }, +widget.config.frequency * 1000);
     }
     return () => {
@@ -84,6 +84,7 @@ export const WidgetCore: React.FC<WidgetCoreProps> = memo(props => {
   }, [
     boardVisible,
     onWidgetAction,
+    widget,
     widget.config.autoUpdate,
     widget.config.frequency,
     widget.config.type,
@@ -124,8 +125,8 @@ export const WidgetCore: React.FC<WidgetCoreProps> = memo(props => {
         return <>{mediaElement}</>;
       case 'container':
         return <>{containerElement}</>;
-      case 'filter':
-        return <WidgetFilterCore id={widget.id} />;
+      case 'controller':
+        return <ControllerWidgetCore id={widget.id} />;
       default:
         return <div>default element</div>;
     }

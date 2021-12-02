@@ -24,6 +24,7 @@ import datart.core.data.provider.SingleTypedValue;
 import datart.core.data.provider.sql.*;
 import datart.data.provider.base.DataProviderException;
 import datart.data.provider.calcite.custom.CustomSqlBetweenOperator;
+import datart.data.provider.calcite.dialect.FetchAndOffsetSupport;
 import org.apache.calcite.sql.*;
 import org.apache.calcite.sql.fun.SqlBetweenOperator;
 import org.apache.calcite.sql.fun.SqlStdOperatorTable;
@@ -47,6 +48,8 @@ public class SqlBuilder {
     private ExecuteParam executeParam;
 
     private SqlDialect dialect;
+
+    private boolean withPage;
 
     private SqlBuilder() {
     }
@@ -73,6 +76,13 @@ public class SqlBuilder {
         return this;
     }
 
+
+    public SqlBuilder withPage(boolean withPage) {
+        this.withPage = withPage;
+        return this;
+    }
+
+
     /**
      * 根据页面操作生成的Aggregator,Filter,Group By, Order By等操作符，重新构建SQL。
      * <p>
@@ -95,7 +105,7 @@ public class SqlBuilder {
         //function columns
         if (!CollectionUtils.isEmpty(executeParam.getFunctionColumns())) {
             for (FunctionColumn functionColumn : executeParam.getFunctionColumns()) {
-                functionColumnMap.put(functionColumn.getAlias(), parseSnippet(functionColumn, T));
+                functionColumnMap.put(functionColumn.getAlias(), parseSnippet(functionColumn, T, true));
             }
         }
 
@@ -103,7 +113,7 @@ public class SqlBuilder {
         if (!CollectionUtils.isEmpty(executeParam.getColumns())) {
             for (String column : executeParam.getColumns()) {
                 if (functionColumnMap.containsKey(column)) {
-                    selectList.add(functionColumnMap.get(column));
+                    selectList.add(SqlNodeUtils.createAliasNode(functionColumnMap.get(column), column));
                 } else {
                     selectList.add(SqlNodeUtils.createAliasNode(SqlNodeUtils.createSqlIdentifier(column, T), column));
                 }
@@ -150,10 +160,11 @@ public class SqlBuilder {
                 SqlNode sqlNode = null;
                 if (functionColumnMap.containsKey(group.getColumn())) {
                     sqlNode = functionColumnMap.get(group.getColumn());
+                    selectList.add(SqlNodeUtils.createAliasNode(sqlNode, group.getColumn()));
                 } else {
                     sqlNode = SqlNodeUtils.createSqlIdentifier(group.getColumn(), T);
+                    selectList.add(sqlNode);
                 }
-                selectList.add(sqlNode);
                 groupBy.add(sqlNode);
             }
         }
@@ -182,6 +193,13 @@ public class SqlBuilder {
             selectList.add(SqlIdentifier.star(SqlParserPos.ZERO));
         }
 
+        SqlNode fetch = null;
+        SqlNode offset = null;
+        if (withPage && (dialect instanceof FetchAndOffsetSupport) && executeParam.getPageInfo() != null) {
+            fetch = SqlLiteral.createExactNumeric(Math.min(executeParam.getPageInfo().getPageSize(), Integer.MAX_VALUE) + "", SqlParserPos.ZERO);
+            offset = SqlLiteral.createExactNumeric(Math.min((executeParam.getPageInfo().getPageNo() - 1) * executeParam.getPageInfo().getPageSize(), Integer.MAX_VALUE) + "", SqlParserPos.ZERO);
+        }
+
         SqlSelect sqlSelect = new SqlSelect(SqlParserPos.ZERO,
                 keywordList,
                 selectList,
@@ -191,11 +209,10 @@ public class SqlBuilder {
                 having,
                 null,
                 orderBy.size() > 0 ? orderBy : null,
-                null,
-                null,
+                offset,
+                fetch,
                 null);
-
-        return sqlSelect.toSqlString(this.dialect).getSql();
+        return SqlNodeUtils.toSql(sqlSelect, this.dialect);
     }
 
     private SqlNode createAggNode(AggregateOperator.SqlOperator sqlOperator, String column, String alias) {
@@ -231,7 +248,11 @@ public class SqlBuilder {
         if (functionColumnMap.containsKey(operator.getColumn())) {
             sqlNode = functionColumnMap.get(operator.getColumn());
         } else {
-            sqlNode = SqlNodeUtils.createSqlIdentifier(operator.getColumn(), T);
+            if (operator.getColumn() == null) {
+                sqlNode = SqlLiteral.createNull(SqlParserPos.ZERO);
+            } else {
+                sqlNode = SqlNodeUtils.createSqlIdentifier(operator.getColumn(), T);
+            }
         }
         if (operator.getAggOperator() != null) {
             SqlOperator aggOperator = mappingSqlAggFunction(operator.getAggOperator());
@@ -259,8 +280,7 @@ public class SqlBuilder {
         List<SqlNode> nodes = Arrays.stream(operator.getValues())
                 .map(this::convertTypedValue)
                 .collect(Collectors.toList());
-        SqlNode paramNode;
-        SqlCall sqlCall;
+
         SqlNode[] sqlNodes = null;
 
         org.apache.calcite.sql.SqlOperator sqlOp;
@@ -355,13 +375,24 @@ public class SqlBuilder {
         return new SqlBasicCall(sqlOp, sqlNodes, SqlParserPos.ZERO);
     }
 
-    private SqlNode parseSnippet(FunctionColumn column, String tableName) throws SqlParseException {
+    /**
+     * parse function column ,and register the column functions
+     *
+     * @param column    function column
+     * @param tableName table where function to execute
+     * @param register  whether register this function as build function
+     */
+    private SqlNode parseSnippet(FunctionColumn column, String tableName, boolean register) throws SqlParseException {
         SqlSelect sqlSelect = (SqlSelect) SqlParserUtils.parseSnippet(column.getSnippet());
         SqlNode sqlNode = sqlSelect.getSelectList().get(0);
         if (!(sqlNode instanceof SqlCall)) {
             return sqlNode;
         }
         completionIdentifier((SqlCall) sqlNode, tableName);
+        if (register) {
+            SqlFunctionRegisterVisitor visitor = new SqlFunctionRegisterVisitor();
+            visitor.visit((SqlCall) sqlNode);
+        }
         return sqlNode;
     }
 

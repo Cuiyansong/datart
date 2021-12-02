@@ -17,21 +17,23 @@
  */
 
 import Chart from 'app/pages/ChartWorkbenchPage/models/Chart';
-import ChartConfig, {
+import {
+  ChartConfig,
   ChartDataSectionField,
   ChartDataSectionType,
   ChartStyleSectionConfig,
-} from 'app/pages/ChartWorkbenchPage/models/ChartConfig';
-import ChartDataset from 'app/pages/ChartWorkbenchPage/models/ChartDataset';
+} from 'app/types/ChartConfig';
+import ChartDataset from 'app/types/ChartDataset';
 import {
   getColumnRenderName,
+  getExtraSeriesDataFormat,
+  getExtraSeriesRowData,
   getStyleValueByGroup,
   getValueByColumnKey,
   transfromToObjectArray,
   valueFormatter,
-} from 'app/utils/chart';
+} from 'app/utils/chartHelper';
 import { init } from 'echarts';
-import { UniqArray } from 'utils/object';
 import Config from './config';
 
 class BasicPieChart extends Chart {
@@ -48,8 +50,7 @@ class BasicPieChart extends Chart {
       props?.icon || 'chartpie',
     );
     this.meta.requirements = props?.requirements || [
-      { group: [1, 999], aggregate: 1 },
-      { group: 0, aggregate: [2, 999] },
+      { group: [0, 1], aggregate: [1, 999] },
     ];
   }
 
@@ -79,7 +80,9 @@ class BasicPieChart extends Chart {
     this.chart?.setOption(Object.assign({}, newOptions), true);
   }
 
-  onUnMount(): void {}
+  onUnMount(): void {
+    this.chart?.dispose();
+  }
 
   onResize(opt: any, context): void {
     this.chart?.resize(context);
@@ -89,37 +92,21 @@ class BasicPieChart extends Chart {
     const dataColumns = transfromToObjectArray(dataset.rows, dataset.columns);
     const styleConfigs = config.styles;
     const dataConfigs = config.datas || [];
-    const settingConfigs = config.settings;
     const groupConfigs = dataConfigs
       .filter(c => c.type === ChartDataSectionType.GROUP)
       .flatMap(config => config.rows || []);
     const aggregateConfigs = dataConfigs
       .filter(c => c.type === ChartDataSectionType.AGGREGATE)
       .flatMap(config => config.rows || []);
-    const colorConfigs = dataConfigs
-      .filter(c => c.type === ChartDataSectionType.COLOR)
-      .flatMap(config => config.rows || []);
     const infoConfigs = dataConfigs
       .filter(c => c.type === ChartDataSectionType.INFO)
       .flatMap(config => config.rows || []);
 
-    const xAxisColumns = groupConfigs.map(config => {
-      return {
-        name: getColumnRenderName(config),
-        type: 'category',
-        tooltip: { show: true },
-        data: UniqArray(dataColumns.map(dc => dc[getValueByColumnKey(config)])),
-      };
-    });
-
     const series = this.getSeries(
-      settingConfigs,
       styleConfigs,
-      colorConfigs,
       dataColumns,
       groupConfigs,
       aggregateConfigs,
-      xAxisColumns,
     );
 
     return {
@@ -128,57 +115,48 @@ class BasicPieChart extends Chart {
           styleConfigs,
           groupConfigs,
           aggregateConfigs,
-          colorConfigs,
           infoConfigs,
           dataColumns,
         ),
       },
-      legend: this.getLegendStyle(
-        groupConfigs,
-        colorConfigs,
-        styleConfigs,
-        series,
-      ),
+      legend: this.getLegendStyle(groupConfigs, styleConfigs, series),
       series,
     };
   }
 
-  private getSeries(
-    settingConfigs,
-    styleConfigs,
-    colorConfigs,
-    dataColumns,
-    groupConfigs,
-    aggregateConfigs,
-    xAxisColumns,
-  ) {
-    if (![].concat(groupConfigs).concat(colorConfigs)?.length) {
+  private getSeries(styleConfigs, dataColumns, groupConfigs, aggregateConfigs) {
+    if (!groupConfigs?.length) {
       const dc = dataColumns?.[0];
       return {
         ...this.getBarSeiesImpl(styleConfigs),
         data: aggregateConfigs.map(config => {
           return {
+            ...getExtraSeriesRowData({
+              [getValueByColumnKey(config)]: dc[getValueByColumnKey(config)],
+            }),
             name: getColumnRenderName(config),
             value: dc[getValueByColumnKey(config)],
-            itemStyle: this.getDataItemStyle(config, colorConfigs, dc),
+            itemStyle: this.getDataItemStyle(config, groupConfigs, dc),
+            ...getExtraSeriesRowData(dc),
+            ...getExtraSeriesDataFormat(config?.format),
           };
         }),
       };
     }
 
-    const groupedConfigNames = groupConfigs
-      .concat(colorConfigs)
-      .map(config => config?.colName);
-
+    const groupedConfigNames = groupConfigs.map(config => config?.colName);
     const flatSeries = aggregateConfigs.map(config => {
       return {
         ...this.getBarSeiesImpl(styleConfigs),
         name: getColumnRenderName(config),
         data: dataColumns.map(dc => {
           return {
+            ...getExtraSeriesRowData(dc),
             name: groupedConfigNames.map(config => dc[config]).join('-'),
             value: dc[getValueByColumnKey(config)],
-            itemStyle: this.getDataItemStyle(config, colorConfigs, dc),
+            itemStyle: this.getDataItemStyle(config, groupConfigs, dc),
+            ...getExtraSeriesRowData(dc),
+            ...getExtraSeriesDataFormat(config?.format),
           };
         }),
       };
@@ -229,7 +207,7 @@ class BasicPieChart extends Chart {
     };
   }
 
-  getLegendStyle(groupConfigs, colorConfigs, styles, series) {
+  getLegendStyle(groupConfigs, styles, series) {
     const show = getStyleValueByGroup(styles, 'legend', 'showLegend');
     const type = getStyleValueByGroup(styles, 'legend', 'type');
     const font = getStyleValueByGroup(styles, 'legend', 'font');
@@ -238,7 +216,7 @@ class BasicPieChart extends Chart {
     let positions = {};
     let orient = {};
 
-    const selected = !![].concat(groupConfigs).concat(colorConfigs).length
+    const selected = !![].concat(groupConfigs).length
       ? series[0].data
       : series?.data
           .map(d => d.name)
@@ -307,7 +285,6 @@ class BasicPieChart extends Chart {
     styleConfigs,
     groupConfigs,
     aggregateConfigs,
-    colorConfigs,
     infoConfigs,
     dataColumns,
   ) {
@@ -315,7 +292,6 @@ class BasicPieChart extends Chart {
       let dataRow = dataColumns?.find(
         dc =>
           groupConfigs
-            .concat(colorConfigs)
             .map(config => dc?.[getValueByColumnKey(config)])
             .join('-') === seriesParams?.name,
       );
@@ -325,7 +301,6 @@ class BasicPieChart extends Chart {
 
       const toolTips = []
         .concat(groupConfigs)
-        .concat(colorConfigs)
         .concat(
           aggregateConfigs?.filter(
             aggConfig =>

@@ -1,10 +1,8 @@
-import ChartConfig, {
-  ChartDataSectionType,
-} from 'app/pages/ChartWorkbenchPage/models/ChartConfig';
-import { ChartDataViewFieldType } from 'app/pages/ChartWorkbenchPage/models/ChartDataView';
-import { WidgetTypeMap } from 'app/pages/DashBoardPage/slice/types';
+import { WidgetTypeMap } from 'app/pages/DashBoardPage/pages/Board/slice/types';
 import { VizType } from 'app/pages/MainPage/pages/VizPage/slice/types';
-import { getColumnRenderName } from 'app/utils/chart';
+import { ChartConfig, ChartDataSectionType } from 'app/types/ChartConfig';
+import { ChartDataViewFieldType } from 'app/types/ChartDataView';
+import { getColumnRenderName } from 'app/utils/chartHelper';
 import { request } from 'utils/request';
 import { errorHandle } from 'utils/utils';
 import { FilterOptionItem } from './types';
@@ -15,7 +13,7 @@ const computedDashboardFilters = (data): FilterOptionItem[] => {
     item.config = item.config ? JSON.parse(item.config) : undefined;
   });
   const filterWidgets = widgets.filter(v => {
-    const _isFilter = v?.config?.type === WidgetTypeMap.filter,
+    const _isFilter = v?.config?.type === WidgetTypeMap.controller,
       isDateOrStr = FILTER_MENU.includes(v?.config?.content?.fieldValueType);
     return _isFilter && isDateOrStr;
   });

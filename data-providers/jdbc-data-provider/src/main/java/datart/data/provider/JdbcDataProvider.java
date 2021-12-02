@@ -6,15 +6,13 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import datart.core.common.FileUtils;
 import datart.core.data.provider.*;
 import datart.data.provider.base.DataProviderException;
-import datart.data.provider.base.JdbcDriverInfo;
-import datart.data.provider.base.JdbcProperties;
+import datart.data.provider.jdbc.JdbcDriverInfo;
+import datart.data.provider.jdbc.JdbcProperties;
 import datart.data.provider.calcite.SqlParserUtils;
 import datart.data.provider.calcite.dialect.SqlStdOperatorSupport;
 import datart.data.provider.jdbc.DataSourceFactory;
 import datart.data.provider.jdbc.DataSourceFactoryDruidImpl;
-import datart.data.provider.jdbc.SqlScriptRender;
 import datart.data.provider.jdbc.adapters.JdbcDataProviderAdapter;
-import datart.data.provider.local.LocalDB;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.calcite.sql.SqlDialect;
 import org.apache.commons.lang3.StringUtils;
@@ -63,61 +61,26 @@ public class JdbcDataProvider extends DataProvider {
     }
 
     @Override
-    public Set<String> readAllDatabases(DataProviderSource source) {
-        try {
-            JdbcDataProviderAdapter adapter = matchProviderAdapter(source);
-            return adapter.readAllDatabases();
-        } catch (SQLException e) {
-            throw new DataProviderException(e);
-        }
+    public Set<String> readAllDatabases(DataProviderSource source) throws SQLException {
+        JdbcDataProviderAdapter adapter = matchProviderAdapter(source);
+        return adapter.readAllDatabases();
     }
 
     @Override
-    public Set<String> readTables(DataProviderSource source, String database) {
-        try {
-            JdbcDataProviderAdapter adapter = matchProviderAdapter(source);
-            return adapter.readAllTables(database);
-        } catch (SQLException e) {
-            throw new DataProviderException(e);
-        }
+    public Set<String> readTables(DataProviderSource source, String database) throws SQLException {
+        JdbcDataProviderAdapter adapter = matchProviderAdapter(source);
+        return adapter.readAllTables(database);
     }
 
     @Override
-    public Set<Column> readTableColumns(DataProviderSource source, String database, String table) {
-        try {
-            JdbcDataProviderAdapter adapter = matchProviderAdapter(source);
-            return adapter.readTableColumn(database, table);
-        } catch (SQLException e) {
-            throw new DataProviderException(e);
-        }
+    public Set<Column> readTableColumns(DataProviderSource source, String database, String table) throws SQLException {
+        JdbcDataProviderAdapter adapter = matchProviderAdapter(source);
+        return adapter.readTableColumn(database, table);
     }
 
     @Override
     public Dataframe execute(DataProviderSource source, QueryScript script, ExecuteParam executeParam) throws Exception {
-
-        Dataframe dataframe;
-        String sql;
-
-        JdbcDataProviderAdapter adapter = matchProviderAdapter(source);
-
-        SqlScriptRender render = new SqlScriptRender(script
-                , executeParam
-                , adapter.getSqlDialect()
-                , adapter.getVariableQuote());
-
-        //如果开启了本地聚合，先查询全量view数据，再进行本地聚合
-        if (executeParam.isServerAggregate()) {
-            sql = render.render(false);
-            Dataframe data = adapter.execute(sql);
-            data.setName(script.toQueryKey());
-            return LocalDB.queryFromLocal(data.getName(), executeParam, executeParam.isCacheEnable(), Collections.singletonList(data));
-        }
-
-        //没有开启本地聚合，将SQL提交至数据源执行
-        sql = render.render(true);
-        dataframe = adapter.execute(sql, executeParam.getPageInfo());
-        dataframe.setScript(sql);
-        return dataframe;
+        return matchProviderAdapter(source).execute(script, executeParam);
     }
 
     @Override
@@ -130,24 +93,30 @@ public class JdbcDataProvider extends DataProvider {
         return null;
     }
 
-    @Override
-    public List<DataProviderSubType> getSubTypes() {
-        return null;
-    }
-
     private JdbcProperties conv2JdbcProperties(DataProviderSource config) {
         JdbcProperties jdbcProperties = new JdbcProperties();
         jdbcProperties.setDbType(config.getProperties().get(DB_TYPE).toString().toUpperCase());
         jdbcProperties.setUrl(config.getProperties().get(URL).toString());
-        jdbcProperties.setUser(config.getProperties().get(USER).toString());
-        jdbcProperties.setPassword(config.getProperties().get(PASSWORD).toString());
+        Object user = config.getProperties().get(USER);
+        if (user != null && StringUtils.isNotBlank(user.toString())) {
+            jdbcProperties.setUser(user.toString());
+        }
+        Object password = config.getProperties().get(PASSWORD);
+        if (password != null && StringUtils.isNotBlank(password.toString())) {
+            jdbcProperties.setPassword(password.toString());
+        }
         String driverClass = config.getProperties().getOrDefault(DRIVER_CLASS, "").toString();
-        jdbcProperties.setDriverClass(StringUtils.isEmpty(driverClass) ?
+        jdbcProperties.setDriverClass(StringUtils.isBlank(driverClass) ?
                 ProviderFactory.getJdbcDriverInfo(jdbcProperties.getDbType()).getDriverClass() :
                 driverClass);
-        Properties properties = new Properties();
-        properties.putAll(config.getProperties());
-        jdbcProperties.setProperties(properties);
+        Object properties = config.getProperties().get("properties");
+        if (properties != null) {
+            if (properties instanceof Map) {
+                Properties prop = new Properties();
+                prop.putAll((Map) properties);
+                jdbcProperties.setProperties(prop);
+            }
+        }
         return jdbcProperties;
     }
 

@@ -17,15 +17,12 @@
  */
 
 import { Row, Space } from 'antd';
+import useI18NPrefix, { I18NComponentProps } from 'app/hooks/useI18NPrefix';
 import TimeConfigContext from 'app/pages/ChartWorkbenchPage/contexts/TimeConfigContext';
-import {
-  i18NComponentProps,
-  useI18NPrefix,
-} from 'app/pages/ChartWorkbenchPage/hooks';
 import {
   FilterCondition,
   FilterConditionType,
-} from 'app/pages/ChartWorkbenchPage/models/ChartConfig';
+} from 'app/types/ChartConfig';
 import moment from 'moment';
 import { FC, memo, useContext, useState } from 'react';
 import ChartFilterCondition, {
@@ -37,7 +34,7 @@ const MannualRangeTimeSelector: FC<
   {
     condition?: FilterCondition;
     onFilterChange: (filter: ChartFilterCondition) => void;
-  } & i18NComponentProps
+  } & I18NComponentProps
 > = memo(({ i18nPrefix, condition, onFilterChange }) => {
   const t = useI18NPrefix(i18nPrefix);
   const { format } = useContext(TimeConfigContext);

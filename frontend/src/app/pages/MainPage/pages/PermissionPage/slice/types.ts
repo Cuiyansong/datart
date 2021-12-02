@@ -36,6 +36,7 @@ export interface DataSourceViewModel {
   name: string;
   type: SubjectTypes | ResourceTypes;
   parentId: string | null;
+  index: number | null;
   isFolder: boolean;
   permissionArray: PermissionLevels[];
 }
@@ -91,4 +92,9 @@ export interface GrantPermissionParams {
     reserved: Privilege[];
   };
   resolve: () => void;
+}
+
+export interface SelectPrivilegesProps {
+  viewpoint: Viewpoints;
+  dataSourceType: ResourceTypes | SubjectTypes;
 }

@@ -1,4 +1,3 @@
-import { ChartDataView } from 'app/pages/ChartWorkbenchPage/models/ChartDataView';
 /**
  * Datart
  *
@@ -23,14 +22,14 @@ import {
   Dashboard,
   DashboardConfig,
   DataChart,
-  SaveDashboard,
   ServerDashboard,
   ServerDatachart,
   ServerView,
   Widget,
-} from 'app/pages/DashBoardPage/slice/types';
+} from 'app/pages/DashBoardPage/pages/Board/slice/types';
+import { ChartDataView } from 'app/types/ChartDataView';
 // import { dataChartServerModel } from 'app/pages/MainPage/pages/VizPage/slice/types';
-import { transformMeta } from 'app/utils/chart';
+import { transformMeta } from 'app/utils/chartHelper';
 import {
   AutoBoardWidgetBackgroundDefault,
   BackgroundDefault,
@@ -48,9 +47,11 @@ export const getDashBoardByResBoard = (data: ServerDashboard): Dashboard => {
     index,
     config,
     permissions,
+    queryVariables,
   } = data;
   return {
     id,
+    queryVariables,
     name,
     orgId,
     parentId,
@@ -97,11 +98,8 @@ export const getScheduleBoardInfo = (
 
   return newBoardInfo;
 };
-export const getInitBoardInfo = (
-  id: string,
-  widgetIds: string[] = [],
-): BoardInfo => {
-  return {
+export const getInitBoardInfo = (id: string, widgetIds: string[] = []) => {
+  const boardInfo: BoardInfo = {
     id: id,
     saving: false,
     loading: false,
@@ -114,7 +112,7 @@ export const getInitBoardInfo = (
     isDroppable: false,
     clipboardWidgets: {},
     widgetIds: widgetIds,
-    filterPanel: {
+    controllerPanel: {
       type: 'hide',
       widgetId: '',
     },
@@ -132,30 +130,9 @@ export const getInitBoardInfo = (
     hasFetchItems: [],
     boardWidthHeight: [0, 0],
   };
+  return boardInfo;
 };
 
-export const initToSaveBoard = (
-  name: string = 'new board',
-  orgId: string = '694b128cab21461094166d8a10f8db2c',
-  parentId: string | null = null,
-  boardType: BoardType,
-  permissions?: any,
-  config?: DashboardConfig,
-) => {
-  let dashboard: SaveDashboard = {
-    id: 'newBoard_1',
-    thumbnail: '',
-    status: 0,
-    config: JSON.stringify(config || getInitBoardConfig(boardType || 'auto')),
-    index: 0,
-    name: name,
-    orgId: orgId,
-    parentId: parentId || null,
-    permissions: permissions || [],
-    widgetToCreate: [],
-  };
-  return dashboard;
-};
 export const getInitBoardConfig = (boardType: BoardType) => {
   const dashboardConfig: DashboardConfig = {
     background: BackgroundDefault,
@@ -175,6 +152,7 @@ export const getInitBoardConfig = (boardType: BoardType) => {
     containerPadding: [16, 16], //0-100
     rowHeight: 32, //20-200
     cols: LAYOUT_COLS, //2-48    step 2
+    initialQuery:true,
   };
   return dashboardConfig;
 };

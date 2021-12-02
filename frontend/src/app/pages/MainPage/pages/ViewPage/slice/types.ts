@@ -1,4 +1,5 @@
-import { TreeDataNode } from 'antd';
+import { TreeDataNode, TreeNodeProps } from 'antd';
+import { ReactElement } from 'react';
 import { SubjectTypes } from '../../PermissionPage/constants';
 import { RowPermissionRaw, Variable } from '../../VariablePage/slice/types';
 import {
@@ -26,7 +27,7 @@ export interface ViewBase {
   id: string;
   name: string;
   parentId: string | null;
-  index?: number;
+  index: number | null;
 }
 
 export interface ViewSimple extends ViewBase {
@@ -52,7 +53,7 @@ export interface ViewViewModel<T = object>
   extends Pick<View, 'name' | 'script'> {
   id: string;
   description?: string;
-  index?: number;
+  index: number | null;
   isFolder?: boolean;
   model: Model;
   config: object;
@@ -138,11 +139,23 @@ export interface SaveFolderParams {
 }
 
 export interface UnarchiveViewParams {
-  view: Pick<ViewSimpleViewModel, 'id' | 'name' | 'parentId'>;
+  view: Pick<ViewSimpleViewModel, 'id' | 'name' | 'parentId' | 'index'>;
   resolve: () => void;
 }
 export interface DeleteViewParams {
   id: string;
   archive?: boolean;
   resolve: () => void;
+}
+
+export interface SelectViewTreeProps {
+  getIcon: (
+    o: ViewSimpleViewModel,
+  ) => ReactElement | ((props: TreeNodeProps) => ReactElement);
+  getDisabled: (o: ViewSimpleViewModel) => boolean;
+}
+
+export interface SelectViewFolderTreeProps {
+  id?: string;
+  getDisabled: (o: ViewSimpleViewModel, path: string[]) => boolean;
 }

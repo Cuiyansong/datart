@@ -16,6 +16,7 @@ export function generateEditingView(
     id: '',
     name: '',
     parentId: null,
+    index: null,
     script: '',
     config: {},
     model: {},
@@ -165,6 +166,7 @@ export function getSaveParamsFromViewModel(
     variables,
     originColumnPermissions,
     columnPermissions,
+    index,
   } = editingView;
 
   if (isUpdate) {
@@ -193,6 +195,7 @@ export function getSaveParamsFromViewModel(
       sourceId,
       parentId,
       isFolder: false,
+      index,
       script,
       config: JSON.stringify(config),
       model: JSON.stringify(model),
@@ -233,6 +236,7 @@ export function getSaveParamsFromViewModel(
       sourceId,
       parentId,
       isFolder: false,
+      index,
       script,
       config: JSON.stringify(config),
       model: JSON.stringify(model),

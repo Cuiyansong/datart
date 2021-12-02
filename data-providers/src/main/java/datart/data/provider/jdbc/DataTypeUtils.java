@@ -22,6 +22,9 @@ import datart.core.base.consts.JavaType;
 import org.apache.calcite.sql.type.SqlTypeFamily;
 import org.apache.calcite.sql.type.SqlTypeName;
 
+import java.sql.Types;
+import java.util.Date;
+
 public class DataTypeUtils {
 
     public static ValueType sqlType2DataType(String sqlType) {
@@ -62,23 +65,35 @@ public class DataTypeUtils {
                 return SqlTypeName.VARCHAR;
         }
     }
+//
+//    public static ValueType javaType2DataType(String javaTypeSimpleName) {
+//        JavaType javaType = JavaType.valueOf(javaTypeSimpleName.toUpperCase());
+//        switch (javaType) {
+//            case BYTE:
+//            case SHORT:
+//            case INTEGER:
+//            case LONG:
+//            case FLOAT:
+//            case DOUBLE:
+//                return ValueType.NUMERIC;
+//            case DATE:
+//                return ValueType.DATE;
+//            case BOOLEAN:
+//                return ValueType.BOOLEAN;
+//            default:
+//                return ValueType.STRING;
+//        }
+//    }
 
-    public static ValueType javaType2DataType(String javaTypeSimpleName) {
-        JavaType javaType = JavaType.valueOf(javaTypeSimpleName.toUpperCase());
-        switch (javaType) {
-            case BYTE:
-            case SHORT:
-            case INTEGER:
-            case LONG:
-            case FLOAT:
-            case DOUBLE:
-                return ValueType.NUMERIC;
-            case DATE:
-                return ValueType.DATE;
-            case BOOLEAN:
-                return ValueType.BOOLEAN;
-            default:
-                return ValueType.STRING;
+    public static ValueType javaType2DataType(Object obj) {
+        if (obj instanceof Number) {
+            return ValueType.NUMERIC;
+        } else if (obj instanceof Date) {
+            return ValueType.DATE;
+        } else if (obj instanceof Boolean) {
+            return ValueType.BOOLEAN;
+        } else {
+            return ValueType.STRING;
         }
     }
 
@@ -92,6 +107,19 @@ public class DataTypeUtils {
                 return SqlTypeName.BOOLEAN;
             default:
                 return SqlTypeName.VARCHAR;
+        }
+    }
+
+    public static int valueType2SqlTypes(ValueType valueType) {
+        switch (valueType) {
+            case NUMERIC:
+                return Types.DOUBLE;
+            case DATE:
+                return Types.DATE;
+            case BOOLEAN:
+                return Types.BOOLEAN;
+            default:
+                return Types.VARCHAR;
         }
     }
 

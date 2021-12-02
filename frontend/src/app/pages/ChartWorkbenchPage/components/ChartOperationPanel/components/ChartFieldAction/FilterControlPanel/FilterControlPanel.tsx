@@ -18,32 +18,26 @@
 
 import { Input, Select } from 'antd';
 import { FormItemEx } from 'app/components';
-import {
-  i18NComponentProps,
-  useI18NPrefix,
-} from 'app/pages/ChartWorkbenchPage/hooks';
+import useI18NPrefix, { I18NComponentProps } from 'app/hooks/useI18NPrefix';
+import { ConditionBuilder } from 'app/pages/ChartWorkbenchPage/models/ChartFilterCondition';
 import {
   AggregateFieldActionType,
   ChartDataSectionConfig,
   ChartDataSectionField,
-} from 'app/pages/ChartWorkbenchPage/models/ChartConfig';
-import ChartDataset from 'app/pages/ChartWorkbenchPage/models/ChartDataset';
+} from 'app/types/ChartConfig';
+import ChartDataset from 'app/types/ChartDataset';
 import ChartDataView, {
   ChartDataViewFieldCategory,
   ChartDataViewFieldType,
-} from 'app/pages/ChartWorkbenchPage/models/ChartDataView';
-import { ConditionBuilder } from 'app/pages/ChartWorkbenchPage/models/ChartFilterCondition';
-import { getColumnRenderName } from 'app/utils/chart';
+} from 'app/types/ChartDataView';
+import { ControllerVisibilityTypes } from 'app/types/FilterControlPanel';
+import { getColumnRenderName } from 'app/utils/chartHelper';
 import { updateBy } from 'app/utils/mutation';
-import { FilterSqlOperator } from 'globalConstants';
+import { CONTROLLER_WIDTH_OPTIONS, FilterSqlOperator } from 'globalConstants';
 import { FC, memo, useState } from 'react';
 import styled from 'styled-components/macro';
 import { isEmptyArray } from 'utils/object';
 import CategoryConditionConfiguration from './CategoryConditionConfiguration';
-import {
-  ControllerVisibilityTypes,
-  CONTROLLER_WIDTH_OPTIONS,
-} from './Constant';
 import DateConditionConfiguration from './DateConditionConfiguration';
 import FilterAggregateConfiguration from './FilterAggregateConfiguration';
 import FilterFacadeConfiguration from './FilterFacadeConfiguration';
@@ -61,7 +55,7 @@ const FilterControllPanel: FC<
       needRefresh?: boolean,
     ) => void;
     fetchDataByField?: (fieldId) => Promise<string[]>;
-  } & i18NComponentProps
+  } & I18NComponentProps
 > = memo(
   ({
     config,

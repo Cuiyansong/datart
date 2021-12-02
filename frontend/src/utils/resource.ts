@@ -21,11 +21,11 @@ export const loadResource = (url: string, iframeDocument?: Document) => {
     const curDoc = iframeDocument || document;
     const script = curDoc.createElement('script');
     script.src = url;
-    script.async = false; // Note: diable async load due to some custom scripts have dependency
+    script.async = false;
     script.type = 'text/javascript';
     script.onload = resolve;
     script.onerror = reject;
-    curDoc.body.appendChild(script);
+    curDoc.head.appendChild(script);
   });
 };
 
@@ -43,9 +43,9 @@ export const loadStyle = (url: string, iframeDocument?: Document) => {
 };
 
 export const loadScript = (url: string, iframeDocument?: Document) => {
-  if (/^[^.]+(\.[^.]+)*\.js/.test(url)) {
+  if (/^[^.]+(\.[^.]+)*\.js$/.test(url)) {
     return loadResource(url, iframeDocument);
-  } else if (/^[^.]+(\.[^.]+)*\.css/.test(url)) {
+  } else if (/^[^.]+(\.[^.]+)*\.css$/.test(url)) {
     return loadStyle(url, iframeDocument);
   }
   return loadResource(url, iframeDocument);

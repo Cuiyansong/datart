@@ -17,15 +17,16 @@
  */
 
 import ReactChart from 'app/pages/ChartWorkbenchPage/components/ChartOperationPanel/components/ChartGraph/ReactChart';
-import ChartConfig from 'app/pages/ChartWorkbenchPage/models/ChartConfig';
-import ChartDataset from 'app/pages/ChartWorkbenchPage/models/ChartDataset';
-import { ChartDataViewFieldType } from 'app/pages/ChartWorkbenchPage/models/ChartDataView';
+import { ChartConfig } from 'app/types/ChartConfig';
+import ChartDataset from 'app/types/ChartDataset';
+import { ChartDataViewFieldType } from 'app/types/ChartDataView';
 import {
   getColumnRenderName,
   getCustomSortableColumns,
   getValueByColumnKey,
   transfromToObjectArray,
-} from 'app/utils/chart';
+} from 'app/utils/chartHelper';
+import { toFormattedValue } from 'app/utils/number';
 import { Omit } from 'utils/object';
 import { v4 as uuidv4 } from 'uuid';
 import AntdTableChartAdapter from '../../ChartTools/AntdTableChartAdapter';
@@ -34,8 +35,8 @@ import Config from './config';
 class BasicTableChart extends ReactChart {
   isISOContainer = 'react-table';
   config = Config;
-
   protected isAutoMerge = false;
+  tableOptions = { dataset: {}, config: {} };
 
   constructor(props?) {
     super(
@@ -65,24 +66,28 @@ class BasicTableChart extends ReactChart {
   }
 
   onUpdated(options, context): void {
+    this.tableOptions = options;
+
     if (!this.isMatchRequirement(options.config)) {
-      this.getInstance().unmount();
+      this.getInstance()?.unmount();
       return;
     }
 
-    this.getInstance().updated(
+    this.getInstance()?.updated(
       this.getOptions(context, options.dataset, options.config),
       context,
     );
   }
 
   onUnMount(): void {
-    this.getInstance().unmount();
+    this.getInstance()?.unmount();
   }
 
   onResize(opt: any, context): void {
-    this.getInstance()?.resize(context);
+    this.onUpdated(this.tableOptions, context);
   }
+
+  getTableY() {}
 
   getOptions(context, dataset?: ChartDataset, config?: ChartConfig) {
     if (!dataset || !config) {
@@ -114,9 +119,14 @@ class BasicTableChart extends ReactChart {
       r => r.type === ChartDataViewFieldType.NUMERIC,
     );
 
+    let tablePagination = this.getPagingOptions(
+      settingConfigs,
+      dataset?.pageInfo,
+    );
+
     return {
       rowKey: 'uid',
-      pagination: this.getPagingOptions(settingConfigs, dataset?.pageInfo),
+      pagination: tablePagination,
       dataSource: this.generateTableRowUniqId(dataColumns),
       columns: this.getColumns(
         groupConfigs,
@@ -130,6 +140,7 @@ class BasicTableChart extends ReactChart {
         dataset,
         clientWidth,
         clientHeight,
+        tablePagination,
       ),
     };
   }
@@ -144,16 +155,16 @@ class BasicTableChart extends ReactChart {
   }
 
   getTableComponents(styleConfigs) {
+    const tableHeaders = this.getStyleValue(styleConfigs, [
+      'header',
+      'modal',
+      'tableHeaders',
+    ]);
+
     return {
       header: {
         cell: props => {
           const uid = props.uid;
-          const tableHeaders = this.getStyleValue(styleConfigs, [
-            'header',
-            'modal',
-            'tableHeaders',
-          ]);
-
           const _findRow = (uid, headers) => {
             let header = headers.find(h => h.uid === uid);
             if (!!header) {
@@ -359,11 +370,12 @@ class BasicTableChart extends ReactChart {
             };
           },
           render: (value, row, rowIndex) => {
+            const formattedValue = toFormattedValue(value, c.format);
             if (!this.isAutoMerge) {
-              return value;
+              return formattedValue;
             }
             return {
-              children: value,
+              children: formattedValue,
               props: { rowSpan: columnRowSpans[rowIndex] },
             };
           },
@@ -376,14 +388,14 @@ class BasicTableChart extends ReactChart {
       tableHeaderStyles,
       dataColumns,
     ) =>
-      (tableHeaderStyles || [])
-        .map(style => {
-          return this.getHeaderColumnGroup(
+      tableHeaderStyles
+        ?.map(style =>
+          this.getHeaderColumnGroup(
             style,
             _getFlatColumns(groupConfigs, aggregateConfigs, dataColumns),
-          );
-        })
-        .filter(column => !!column);
+          ),
+        )
+        ?.filter(column => !!column) || [];
     return !tableHeaderStyles || tableHeaderStyles.length === 0
       ? _getFlatColumns(groupConfigs, aggregateConfigs, dataColumns)
       : _getGroupColumns(
@@ -402,6 +414,7 @@ class BasicTableChart extends ReactChart {
       return column;
     }
     return {
+      uid: tableHeader?.uid,
       title: tableHeader.label,
       onHeaderCell: record => {
         return {
@@ -416,7 +429,13 @@ class BasicTableChart extends ReactChart {
     };
   }
 
-  getAntdTableStyleOptions(styleConfigs, dataset: ChartDataset, width, height) {
+  getAntdTableStyleOptions(
+    styleConfigs,
+    dataset: ChartDataset,
+    width,
+    height,
+    tablePagination,
+  ) {
     const showTableBorder = this.getStyleValue(styleConfigs, [
       'style',
       'enableBorder',
@@ -425,7 +444,8 @@ class BasicTableChart extends ReactChart {
       'style',
       'enableFixedHeader',
     ]);
-    const tableSize = this.getStyleValue(styleConfigs, ['data', 'tableSize']);
+    const tableSize =
+      this.getStyleValue(styleConfigs, ['data', 'tableSize']) || 'default';
     const HEADER_HEIGHT = { default: 56, middle: 48, small: 40 };
     const PAGINATION_HEIGHT = { default: 64, middle: 56, small: 56 };
 
@@ -433,7 +453,10 @@ class BasicTableChart extends ReactChart {
       scroll: enableFixedHeader
         ? {
             scrollToFirstRowOnChange: true,
-            y: height - HEADER_HEIGHT[tableSize] - PAGINATION_HEIGHT[tableSize],
+            y:
+              height -
+              HEADER_HEIGHT[tableSize] -
+              (tablePagination ? PAGINATION_HEIGHT[tableSize] : 0),
           }
         : { scrollToFirstRowOnChange: true },
       bordered: !!showTableBorder,
@@ -456,6 +479,7 @@ class BasicTableChart extends ReactChart {
         })
       : false;
   }
+
   registerTablePagingEvents(seriesName: string, dataIndex: number, value: any) {
     const eventParams = {
       componentType: 'series',

@@ -18,15 +18,15 @@
 
 import { Menu } from 'antd';
 import SubMenu from 'antd/lib/menu/SubMenu';
-import { useI18NPrefix } from 'app/pages/ChartWorkbenchPage/hooks';
+import useI18NPrefix from 'app/hooks/useI18NPrefix';
 import {
   ChartDataSectionField,
   ChartDataSectionFieldActionType,
-} from 'app/pages/ChartWorkbenchPage/models/ChartConfig';
-import { ChartDataViewFieldCategory } from 'app/pages/ChartWorkbenchPage/models/ChartDataView';
+} from 'app/types/ChartConfig';
+import { ChartDataConfigSectionProps } from 'app/types/ChartDataConfigSection';
+import { ChartDataViewFieldCategory } from 'app/types/ChartDataView';
 import { updateBy } from 'app/utils/mutation';
 import { FC } from 'react';
-import { ChartDataConfigSectionProps } from '../ChartDataConfigSection';
 import AggregationAction from '../ChartFieldAction/AggregationAction';
 import AggregationLimitAction from '../ChartFieldAction/AggregationLimitAction';
 import SortAction from '../ChartFieldAction/SortAction';

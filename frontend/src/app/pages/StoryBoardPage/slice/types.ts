@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { strEnumType } from 'app/pages/DashBoardPage/slice/types';
+import { strEnumType } from 'app/pages/DashBoardPage/pages/Board/slice/types';
 import { VizType } from './../../MainPage/pages/VizPage/slice/types';
 export interface StoryBoardState {
   storyMap: Record<string, StoryBoard>;
@@ -31,7 +31,7 @@ export interface StoryBoard {
   status: number;
   config: StoryConfig;
 }
-export interface StoryBoardOfServer extends Omit<StoryBoard, 'config'> {
+export interface ServerStoryBoard extends Omit<StoryBoard, 'config'> {
   config: string;
   storypages?: StoryPageOfServer[];
 }

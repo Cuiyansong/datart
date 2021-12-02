@@ -20,8 +20,8 @@ import { Button, Form, Input } from 'antd';
 import { BoardActionContext } from 'app/pages/DashBoardPage/contexts/BoardActionContext';
 import { WidgetContext } from 'app/pages/DashBoardPage/contexts/WidgetContext';
 import { WidgetInfoContext } from 'app/pages/DashBoardPage/contexts/WidgetInfoContext';
+import { MediaWidgetContent } from 'app/pages/DashBoardPage/pages/Board/slice/types';
 import { editWidgetInfoActions } from 'app/pages/DashBoardPage/pages/BoardEditor/slice';
-import { MediaWidgetContent } from 'app/pages/DashBoardPage/slice/types';
 import produce from 'immer';
 import React, { useContext, useEffect, useState } from 'react';
 import { useDispatch } from 'react-redux';
@@ -87,7 +87,7 @@ const VideoWidget: React.FC = () => {
         </Form.Item>
       </Form>
     </div>
-  ); 
+  );
 
   switch (mediaType) {
     case 'video':

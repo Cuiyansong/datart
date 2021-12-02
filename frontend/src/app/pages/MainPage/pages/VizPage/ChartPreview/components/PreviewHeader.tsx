@@ -33,7 +33,7 @@ import {
   Space,
 } from 'antd';
 import { FormItemEx } from 'app/components';
-import { useI18NPrefix } from 'app/pages/ChartWorkbenchPage/hooks';
+import useI18NPrefix from 'app/hooks/useI18NPrefix';
 import { FC, memo, useState } from 'react';
 import styled from 'styled-components/macro';
 import {
@@ -142,7 +142,7 @@ const PreviewHeader: FC<{
               </FormItemEx>
               <FormItemEx label={t('share.enablePassword')}>
                 <Checkbox
-                  value={enablePassword}
+                  checked={enablePassword}
                   onChange={e => {
                     setEnablePassword(e.target.checked);
                   }}

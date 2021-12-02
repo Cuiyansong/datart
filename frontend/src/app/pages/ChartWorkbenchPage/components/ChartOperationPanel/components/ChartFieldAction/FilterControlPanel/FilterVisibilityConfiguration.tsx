@@ -17,25 +17,22 @@
  */
 
 import { Input, Radio, Row, Select, Space } from 'antd';
-import {
-  i18NComponentProps,
-  useI18NPrefix,
-} from 'app/pages/ChartWorkbenchPage/hooks';
+import useI18NPrefix, { I18NComponentProps } from 'app/hooks/useI18NPrefix';
 import {
   ChartDataSectionField,
   FilterVisibility,
-} from 'app/pages/ChartWorkbenchPage/models/ChartConfig';
+} from 'app/types/ChartConfig';
+import { ControllerVisibilityTypes } from 'app/types/FilterControlPanel';
 import { FilterSqlOperator } from 'globalConstants';
 import { FC, memo, useState } from 'react';
 import styled from 'styled-components/macro';
-import { ControllerVisibilityTypes } from './Constant';
 
 const FilterVisibilityConfiguration: FC<
   {
     visibility?: FilterVisibility;
     otherFilters?: ChartDataSectionField[];
     onChange: (visibility: FilterVisibility) => void;
-  } & i18NComponentProps
+  } & I18NComponentProps
 > = memo(({ otherFilters, visibility, onChange: onVisibilityChange }) => {
   const t = useI18NPrefix('viz.common.enum.controllerVisibilityTypes');
   const t2 = useI18NPrefix('viz.common.enum.filterOperator');

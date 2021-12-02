@@ -8,10 +8,11 @@ import {
   FONT_WEIGHT_REGULAR,
 } from 'styles/StyleConstants';
 import { APIResponse } from 'types';
+import { SaveFormModel } from '../app/pages/MainPage/pages/VizPage/SaveFormContext';
 import { removeToken } from './auth';
 
 export function errorHandle(error) {
-  if (error.response) {
+  if (error?.response) {
     // AxiosError
     const { response } = error as AxiosError;
     switch (response?.status) {
@@ -23,11 +24,20 @@ export function errorHandle(error) {
         message.error(response?.data.message || error.message);
         break;
     }
-  } else if (error.message) {
+  } else if (error?.message) {
     // Error
     message.error(error.message);
   } else {
     message.error(error);
+  }
+  return error;
+}
+
+export function reduxActionErrorHandler(errorAction) {
+  if (errorAction?.payload) {
+    message.error(errorAction?.payload);
+  } else if (errorAction?.error) {
+    message.error(errorAction?.error.message);
   }
 }
 
@@ -55,6 +65,7 @@ export function listToTree<
     name: string;
     parentId: string | null;
     isFolder: boolean;
+    index: number | null;
   },
 >(
   list: undefined | T[],
@@ -63,6 +74,7 @@ export function listToTree<
   options?: {
     getIcon?: (o: T) => ReactElement | ((props: TreeNodeProps) => ReactElement);
     getDisabled?: (o: T, path: string[]) => boolean;
+    getSelectable?: (o: T) => boolean;
   },
 ): undefined | any[] {
   if (!list) {
@@ -82,14 +94,15 @@ export function listToTree<
         value: o.id,
         path,
         ...(options?.getIcon && { icon: options.getIcon(o) }),
-        ...(options?.getDisabled && {
-          disabled: options.getDisabled(o, path),
-        }),
+        ...(options?.getDisabled && { disabled: options.getDisabled(o, path) }),
+        ...(options?.getSelectable && { selectable: options.getSelectable(o) }),
       });
     } else {
       childrenList.push(o);
     }
   });
+
+  treeNodes.sort((a, b) => Number(a.index) - Number(b.index));
 
   return treeNodes.map(node => {
     const children = listToTree(childrenList, node.key, node.path, options);
@@ -110,6 +123,87 @@ export function findTreeNode<
       : currentNode;
   }
 }
+
+export const loopTree = (data, key: string, keyname: string, callback) => {
+  for (let i = 0; i < data.length; i++) {
+    if (data[i].key === key) {
+      return callback(data[i], i, data);
+    }
+    if (data[i].children) {
+      loopTree(data[i].children, key, keyname, callback);
+    }
+  }
+};
+
+export const onDropTreeFn = ({ info, treeData, callback }) => {
+  const dropKey = info.node.key; //落下的key
+  const dragKey = info.dragNode.key; //拖动的key
+  const dropPos = info.node.pos.split('-');
+  const dropPosition = info.dropPosition - Number(dropPos[dropPos.length - 1]);
+  const data = treeData || [];
+  let dragObj,
+    dropArr,
+    dropIndex,
+    index = 0;
+
+  loopTree(data, dragKey, 'key', item => {
+    dragObj = item;
+  });
+
+  loopTree(data, dropKey, 'key', (item, idx, arr) => {
+    dropArr = arr;
+    dropIndex = idx;
+  });
+  if (!info.dropToGap && !dropArr[dropIndex].isFolder) {
+    //判断不能移动到非目录下面
+    return false;
+  }
+
+  if (
+    dropArr[dropIndex].parentId === dragObj.id ||
+    (dropArr[dropIndex].isFolder && dropArr[dropIndex].id === dragObj.id)
+  ) {
+    return false;
+  }
+
+  if (!info.dropToGap) {
+    //如果移动到二级目录里面的第一个，获取到该目录children中[0]元素的index-1
+    index = dropArr[dropIndex].children
+      ? dropArr[dropIndex].children[0]?.index - 1
+      : 0;
+  } else if (dropPosition === -1) {
+    // 移动到第一个
+    index = dropArr[dropIndex] ? dropArr[dropIndex].index - 1 : 0;
+  } else if (dropIndex === dropArr.length - 1) {
+    // 移动到最后一个
+    index = dropArr[dropArr.length - 1].index + 1;
+  } else {
+    //中间
+    index = (dropArr[dropIndex].index + dropArr[dropIndex + 1].index) / 2;
+  }
+  let { id } = dragObj,
+    parentId = !info.dropToGap
+      ? dropArr[dropIndex].id
+      : dropArr[dropIndex].parentId || null;
+  //如果移动到二级目录里面的第一个，就用当前目录的id,如果不是就用文件的parentId
+  callback(id, parentId, index);
+};
+
+export const getInsertedNodeIndex = (
+  AddData: Omit<SaveFormModel, 'config'> & { config?: object | string },
+  treeData: any,
+) => {
+  let index: number = 0;
+
+  if (treeData?.length) {
+    let IndexArr = treeData
+      .filter((v: any) => v.parentId == AddData.parentId)
+      .map(v => Number(v.index) || 0);
+    index = IndexArr?.length ? Math.max(...IndexArr) + 1 : 0;
+  }
+
+  return index;
+};
 
 export function getPath<T extends { id: string; parentId: string | null }>(
   list: T[],

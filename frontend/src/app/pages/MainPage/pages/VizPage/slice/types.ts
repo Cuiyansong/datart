@@ -1,6 +1,8 @@
-import ChartConfig from 'app/pages/ChartWorkbenchPage/models/ChartConfig';
-import ChartDataset from 'app/pages/ChartWorkbenchPage/models/ChartDataset';
+import { TreeNodeProps } from 'antd';
 import { BackendChart } from 'app/pages/ChartWorkbenchPage/slice/workbenchSlice';
+import { ChartConfig } from 'app/types/ChartConfig';
+import ChartDataset from 'app/types/ChartDataset';
+import { ReactElement } from 'react';
 
 export type VizType = [
   'DATACHART',
@@ -93,8 +95,9 @@ export interface VizTab {
 export interface AddVizParams {
   viz: {
     name: string;
+    index:number | null;
     description?: string;
-    parentId?: string;
+    parentId?: string | null;
     orgId: string;
   };
   type: VizType;
@@ -112,6 +115,7 @@ export interface UnarchiveVizParams {
     name: string;
     vizType: VizType;
     parentId: string | null;
+    index:number | null;
   };
   resolve: () => void;
 }
@@ -154,4 +158,16 @@ export interface FilterSearchParams {
 export interface FilterSearchParamsWithMatch {
   params?: FilterSearchParams;
   isMatchByName?: boolean;
+}
+
+export interface SelectVizTree {
+  getIcon: (
+    o: FolderViewModel,
+  ) => ReactElement | ((props: TreeNodeProps) => ReactElement);
+  getDisabled?: (o: FolderViewModel) => boolean;
+}
+
+export interface SelectVizFolderTree {
+  id?: string;
+  getDisabled: (o: FolderViewModel, path: string[]) => boolean;
 }

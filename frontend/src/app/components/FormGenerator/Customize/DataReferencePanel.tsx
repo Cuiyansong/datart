@@ -16,9 +16,10 @@
  * limitations under the License.
  */
 
-import { ChartStyleSectionConfig } from 'app/pages/ChartWorkbenchPage/models/ChartConfig';
+import { ChartStyleSectionConfig } from 'app/types/ChartConfig';
 import { updateByKey } from 'app/utils/mutation';
 import { FC, memo, useEffect } from 'react';
+import styled from 'styled-components/macro';
 import { CloneValueDeep, mergeDefaultToValue } from 'utils/object';
 import { GroupLayout } from '../Layout';
 import { ItemLayoutProps } from '../types';
@@ -41,6 +42,12 @@ const defaultRows = [
             key: 'markLine',
             comType: 'group',
             rows: [
+              {
+                label: 'reference.enableMarkLine',
+                key: 'enableMarkLine',
+                default: false,
+                comType: 'checkbox',
+              },
               {
                 label: 'reference.valueType',
                 key: 'valueType',
@@ -84,7 +91,7 @@ const defaultRows = [
                 options: {
                   getItems: cols => {
                     const sections = (cols || []).filter(col =>
-                      ['deminsion'].includes(col.key),
+                      ['metrics'].includes(col.key),
                     );
                     const columns = sections.reduce(
                       (acc, cur) => acc.concat(cur.rows || []),
@@ -150,6 +157,12 @@ const defaultRows = [
             comType: 'group',
             rows: [
               {
+                label: 'reference.enableMarkArea',
+                key: 'enableMarkArea',
+                default: false,
+                comType: 'checkbox',
+              },
+              {
                 label: 'reference.startValueType',
                 key: 'startValueType',
                 default: 'constant',
@@ -192,7 +205,7 @@ const defaultRows = [
                 options: {
                   getItems: cols => {
                     const columns = (cols || [])
-                      .filter(col => ['deminsion'].includes(col.key))
+                      .filter(col => ['metrics'].includes(col.key))
                       .reduce((acc, cur) => acc.concat(cur.rows || []), [])
                       .map(c => ({
                         key: c.uid,
@@ -249,7 +262,7 @@ const defaultRows = [
                 options: {
                   getItems: cols => {
                     const columns = (cols || [])
-                      .filter(col => ['deminsion'].includes(col.key))
+                      .filter(col => ['metrics'].includes(col.key))
                       .reduce((acc, cur) => acc.concat(cur.rows || []), [])
                       .map(c => ({
                         key: c.uid,
@@ -329,7 +342,8 @@ const defaultRows = [
 const DataReferencePanel: FC<ItemLayoutProps<ChartStyleSectionConfig>> = memo(
   ({ ancestors, translate: t, data, dataConfigs, onChange }) => {
     useEffect(() => {
-      if (!data.rows || data.rows.length === 0) {
+      // init default component rows
+      if (!data?.rows?.length) {
         const newData = updateByKey(
           data,
           'rows',
@@ -340,16 +354,20 @@ const DataReferencePanel: FC<ItemLayoutProps<ChartStyleSectionConfig>> = memo(
     }, [ancestors, data, onChange]);
 
     return (
-      <GroupLayout
-        ancestors={ancestors}
-        data={data}
-        translate={t}
-        dataConfigs={dataConfigs}
-        onChange={onChange}
-      />
+      <StyledDataReferencePanel>
+        <GroupLayout
+          ancestors={ancestors}
+          data={data}
+          translate={t}
+          dataConfigs={dataConfigs}
+          onChange={onChange}
+        />
+      </StyledDataReferencePanel>
     );
   },
   itemLayoutComparer,
 );
 
 export default DataReferencePanel;
+
+const StyledDataReferencePanel = styled.div``;

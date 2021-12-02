@@ -101,7 +101,7 @@ public class SqlNodeUtils {
             case BOOLEAN:
                 return SqlLiteral.createBoolean(Boolean.parseBoolean(value.getValue().toString()), SqlParserPos.ZERO);
             case DATE:
-                return SqlLiteral.createTimestamp(new TimestampString(value.getValue().toString()), 3, SqlParserPos.ZERO);
+                return SqlLiteral.createTimestamp(new TimestampString(value.getValue().toString()), 0, SqlParserPos.ZERO);
             case FRAGMENT:
                 return new SqlFragment(value.getValue().toString());
             case IDENTIFIER:
@@ -115,4 +115,13 @@ public class SqlNodeUtils {
         return createSqlNode(value, null);
     }
 
+    public static String toSql(SqlNode sqlNode, SqlDialect dialect) {
+        return sqlNode.toSqlString(
+                config -> config.withDialect(dialect)
+                        .withQuoteAllIdentifiers(true)
+                        .withAlwaysUseParentheses(false)
+                        .withSelectListItemsOnSeparateLines(false)
+                        .withUpdateSetListNewline(false)
+                        .withIndentation(0)).getSql();
+    }
 }

@@ -40,6 +40,8 @@ export const COMMON_FORM_TITLE_PREFIX = {
   [CommonFormTypes.Edit]: '编辑',
 };
 
+export const DEFAULT_DEBOUNCE_WAIT = 300;
+
 export const FONT_SIZES = [
   10, 12, 13, 14, 15, 16, 18, 20, 24, 28, 32, 36, 40, 48, 56, 64, 72, 96, 128,
 ];
@@ -104,7 +106,7 @@ export const TIME_DIRECTION = [
   { name: 'ago', value: '-' },
   { name: 'fromNow', value: '+' },
 ];
-
+ 
 export const RECOMMEND_TIME = {
   TODAY: 'today',
   YESTERDAY: 'yesterday',
@@ -147,3 +149,36 @@ export const ResizeEvent = new Event('resize', {
 });
 
 export const FILTER_TIME_FORMATTER_IN_QUERY = 'yyyy-MM-DD HH:mm:ss';
+
+export const CONTROLLER_WIDTH_OPTIONS = [
+  { label: 'auto', value: 'auto' },
+  { label: '100%', value: '24' },
+  { label: '1/2', value: '12' },
+  { label: '1/3', value: '8' },
+  { label: '1/4', value: '6' },
+  { label: '1/6', value: '4' },
+  { label: '1/8', value: '3' },
+  { label: '1/12', value: '2' },
+];
+
+export enum NumberUnitKey {
+  None = 'none',
+  // Engllish Unit
+  Thousand = 'thousand',
+  Million = 'million',
+  Billion = 'billion',
+  // Chinese Unit
+  Wan = 'wan',
+  Yi = 'yi',
+}
+
+export const NumericUnitDescriptions = new Map<NumberUnitKey, [number, string]>(
+  [
+    [NumberUnitKey.None, [1, '']],
+    [NumberUnitKey.Thousand, [10 ** 3, 'K']],
+    [NumberUnitKey.Million, [10 ** 6, 'M']],
+    [NumberUnitKey.Billion, [10 ** 10, 'B']],
+    [NumberUnitKey.Wan, [10 ** 4, '万']],
+    [NumberUnitKey.Yi, [10 ** 8, '亿']],
+  ],
+);

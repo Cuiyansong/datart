@@ -11,15 +11,18 @@ import { CommonFormTypes } from 'globalConstants';
 import React, { memo, useCallback, useContext, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useHistory } from 'react-router-dom';
-import { stopPPG } from 'utils/utils';
+import { getInsertedNodeIndex, onDropTreeFn, stopPPG } from 'utils/utils';
+import { isParentIdEqual } from '../../../slice/utils';
 import {
   PermissionLevels,
   ResourceTypes,
 } from '../../PermissionPage/constants';
 import { SaveFormContext } from '../SaveFormContext';
+import { useViewSlice } from '../slice';
 import {
   selectCurrentEditingViewKey,
   selectViewListLoading,
+  selectViews,
 } from '../slice/selectors';
 import {
   deleteView,
@@ -41,6 +44,8 @@ export const FolderTree = memo(({ treeData }: FolderTreeProps) => {
   const orgId = useSelector(selectOrgId);
   const isOwner = useSelector(selectIsOrgOwner);
   const permissionMap = useSelector(selectPermissionMap);
+  const { actions } = useViewSlice();
+  const viewsData = useSelector(selectViews);
 
   useEffect(() => {
     dispatch(getViews(orgId));
@@ -75,7 +80,7 @@ export const FolderTree = memo(({ treeData }: FolderTreeProps) => {
   );
 
   const moreMenuClick = useCallback(
-    ({ id, name, parentId }) =>
+    ({ id, name, parentId, index }) =>
       ({ key, domEvent }) => {
         domEvent.stopPropagation();
         switch (key) {
@@ -91,12 +96,17 @@ export const FolderTree = memo(({ treeData }: FolderTreeProps) => {
               },
               parentIdLabel: '目录',
               onSave: (values, onClose) => {
+                if (isParentIdEqual(parentId, values.parentId)) {
+                  index = getInsertedNodeIndex(values, viewsData);
+                }
+
                 dispatch(
                   updateViewBase({
                     view: {
                       id,
                       ...values,
                       parentId: values.parentId || null,
+                      index,
                     },
                     resolve: onClose,
                   }),
@@ -110,7 +120,7 @@ export const FolderTree = memo(({ treeData }: FolderTreeProps) => {
             break;
         }
       },
-    [dispatch, showSaveForm],
+    [dispatch, showSaveForm, viewsData],
   );
 
   const renderTreeTitle = useCallback(
@@ -172,6 +182,26 @@ export const FolderTree = memo(({ treeData }: FolderTreeProps) => {
     [history, orgId, currentEditingViewKey],
   );
 
+  const onDrop = info => {
+    onDropTreeFn({
+      info,
+      treeData,
+      callback: (id, parentId, index) => {
+        dispatch(
+          updateViewBase({
+            view: {
+              id,
+              parentId,
+              index: index,
+              name: info.dragNode.name,
+            },
+            resolve: () => {},
+          }),
+        );
+      },
+    });
+  };
+
   return (
     <Tree
       loading={loading}
@@ -180,6 +210,7 @@ export const FolderTree = memo(({ treeData }: FolderTreeProps) => {
       selectedKeys={[currentEditingViewKey]}
       onSelect={treeSelect}
       defaultExpandAll
+      onDrop={onDrop}
       draggable
     />
   );
